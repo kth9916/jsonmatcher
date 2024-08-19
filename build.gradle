@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '1.17.4'
+}
+
+group = 'org.kth'
+version = '1.0-SNAPSHOT'
+
+intellij {
+    version = "2023.2.1"
+    type = "IC"
+    plugins = ["com.intellij.java", "Git4Idea", "gradle", "org.intellij.groovy", "java"]
+}
+
+dependencies {
+    implementation 'org.jetbrains:annotations:24.0.1' // 필요에 따라 추가 의존성을 여기에 정의합니다.
+    testImplementation 'junit:junit:4.13.2'
+}
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+patchPluginXml {
+    sinceBuild = '222'
+    untilBuild = '242.*'
+}
+
+signPlugin {
+    certificateChain = System.getenv('CERTIFICATE_CHAIN')
+    privateKey = System.getenv('PRIVATE_KEY')
+    password = System.getenv('PRIVATE_KEY_PASSWORD')
+}
+
+publishPlugin {
+    token = System.getenv('PUBLISH_TOKEN')
+}
+
+repositories {
+    mavenCentral()
+}
+
+test {
+    useJUnitPlatform()
+}
