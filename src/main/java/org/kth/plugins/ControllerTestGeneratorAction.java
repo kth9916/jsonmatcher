@@ -122,36 +122,21 @@ public class ControllerTestGeneratorAction extends AnAction {
         // 디렉토리를 생성합니다.
         PsiDirectory finalTargetDirectory = ensureSubdirectoriesExist(project, packagePath, moduleTestDirectory);
 
-//        PsiDirectory finalTargetDirectory = null;
-//        try {
-//            final PsiDirectory[] targetDirectory = new PsiDirectory[1];
-//
-//            // WriteCommandAction 내에서 디렉토리 생성 작업을 수행합니다.
-//            String[] pathParts = packagePath.split("/");
-//            for(String part: pathParts) {
-//                PsiDirectory subDir = moduleTestDirectory.findSubdirectory(part);
-//                if(subDir == null){
-//                    WriteCommandAction.runWriteCommandAction(project, () -> {
-//                        targetDirectory[0] = createSubdirectories(packagePath, moduleTestDirectory, "/");
-//                    });
-//                    finalTargetDirectory = targetDirectory[0];
-//                }else{
-//                    finalTargetDirectory =  subDir;
-//                }
-//            }
-//        } catch (IncorrectOperationException e) {
-//            e.printStackTrace();
-//            return;
-//        }
-
         if (finalTargetDirectory == null) {
             System.out.println("Failed to create target directory.");
             return;
         }
 
+        String fileName = testClassName + ".java";
+        PsiFile existingFile = finalTargetDirectory.findFile(fileName);
+        if (existingFile != null) {
+            System.out.println("Test class already exists: " + fileName);
+            return; // 파일이 이미 존재하면 생성하지 않고 건너뜁니다.
+        }
+
+
         // 테스트 클래스 파일을 생성합니다.
         String classContent = generateTestClassContent(method, category);
-        String fileName = testClassName + ".java";
         PsiFile testClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, classContent);
 
         PsiDirectory finalTargetDirectory1 = finalTargetDirectory;
