@@ -12,14 +12,11 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.file.PsiDirectoryFactory;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-
-import static com.intellij.ide.util.DirectoryUtil.createSubdirectories;
 
 public class ControllerTestGeneratorAction extends AnAction {
     //
@@ -49,7 +46,7 @@ public class ControllerTestGeneratorAction extends AnAction {
 
             // 메서드를 찾아서 `R`로 끝나는 `@PostMapping`만 선택
             List<PsiMethod> postMappingMethods = PsiTreeUtil.findChildrenOfType(psiClass, PsiMethod.class).stream()
-                    .filter(this::methodHasPostMappingWithREnd)
+//                    .filter(this::methodHasPostMappingWithREnd)
                     .toList();
 
             // 각 메서드에 대해 테스트 클래스 생성
@@ -99,9 +96,9 @@ public class ControllerTestGeneratorAction extends AnAction {
         String controllerPackage = containingClass.getQualifiedName();
         String[] packageParts = controllerPackage.split("\\.");
         String category = "";
-        for (int i=0; i < packageParts.length; i++) {
-            if(packageParts[i].equals("rest")){
-                category = packageParts[i-1];
+        for (int i = 0; i < packageParts.length; i++) {
+            if (packageParts[i].equals("rest")) {
+                category = packageParts[i - 1];
             }
         }
 
@@ -117,7 +114,7 @@ public class ControllerTestGeneratorAction extends AnAction {
         }
 
         // 패키지 경로를 설정합니다.
-        String packagePath = "kr/amc/amis/caehbff/comparison/"+ category + "/" + directoryName.toLowerCase();
+        String packagePath = "kr/amc/amis/caehbff/comparison/" + category + "/" + directoryName.toLowerCase();
 
         // 디렉토리를 생성합니다.
         PsiDirectory finalTargetDirectory = ensureSubdirectoriesExist(project, packagePath, moduleTestDirectory);
@@ -129,21 +126,49 @@ public class ControllerTestGeneratorAction extends AnAction {
 
         String fileName = testClassName + ".java";
         PsiFile existingFile = finalTargetDirectory.findFile(fileName);
+        String newClassContent = generateTestClassContent(method, category);
+
         if (existingFile != null) {
-            System.out.println("Test class already exists: " + fileName);
-            return; // 파일이 이미 존재하면 생성하지 않고 건너뜁니다.
+            String existingFileContent = existingFile.getText();
+
+            // 기존 파일과 새로운 내용을 비교합니다.
+            if (existingFileContent.equals(newClassContent)) {
+                System.out.println("Test class already exists and is identical: " + fileName);
+                return; // 내용이 동일하다면 생성하지 않고 종료합니다.
+            } else {
+                // 내용이 다르면 파일을 업데이트합니다.
+                System.out.println("Test class exists but differs, updating file: " + fileName);
+                WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
+                    existingFile.delete(); // 기존 파일 삭제
+                    PsiFile updatedTestClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, newClassContent);
+                    finalTargetDirectory.add(updatedTestClassFile); // 새로운 파일 추가
+                    return null;
+                });
+            }
+        } else {
+            // 기존 파일이 없으면 새 파일을 생성합니다.
+            PsiFile testClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, newClassContent);
+            WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
+                finalTargetDirectory.add(testClassFile);
+                return null;
+            });
         }
 
-
-        // 테스트 클래스 파일을 생성합니다.
-        String classContent = generateTestClassContent(method, category);
-        PsiFile testClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, classContent);
-
-        PsiDirectory finalTargetDirectory1 = finalTargetDirectory;
-        WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
-            finalTargetDirectory1.add(testClassFile);
-            return null;
-        });
+//        if (existingFile != null) {
+//            System.out.println("Test class already exists: " + fileName);
+//            return; // 파일이 이미 존재하면 생성하지 않고 건너뜁니다.
+//        }
+//
+//
+//        // 테스트 클래스 파일을 생성합니다.
+//        String classContent = generateTestClassContent(method, category);
+//        PsiFile testClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, classContent);
+//
+//        PsiDirectory finalTargetDirectory1 = finalTargetDirectory;
+//        WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
+//            finalTargetDirectory1.add(testClassFile);
+//            return null;
+//        });
     }
 
     private PsiDirectory findModuleTestDirectory(Project project) {
@@ -174,23 +199,22 @@ public class ControllerTestGeneratorAction extends AnAction {
         String methodName = method.getName();
         String postMappingValue = extractPostMappingValue(method);
 
-
-
         return "package kr.amc.amis.caehbff.comparison." + category + "." + methodName.toLowerCase() + ";" +
                 "\n" +
                 "import com.fasterxml.jackson.databind.JsonNode;\n" +
                 "import kr.amc.amis.caehbff.comparison.CaEhBffTestBootApplication;\n" +
-                "import kr.amc.amis.caehbff.comparison.util.TestClient;\n" +
+                "import kr.amc.amis.testlibrary.api.comparison.client.TestServerClient;\n" +
                 "import kr.amc.amis.testlibrary.api.comparison.helper.AmcDataHelper;\n" +
                 "import kr.amc.amis.testlibrary.api.comparison.helper.CustomAMCDataAssert;\n" +
+                "import kr.amc.amis.testlibrary.api.comparison.logging.annotation.ApiComparison;\n" +
                 "import lombok.extern.slf4j.Slf4j;\n" +
                 "import org.junit.jupiter.api.Assumptions;\n" +
                 "import org.junit.jupiter.api.TestInstance;\n" +
                 "import org.junit.jupiter.params.ParameterizedTest;\n" +
                 "import org.junit.jupiter.params.provider.Arguments;\n" +
                 "import org.junit.jupiter.params.provider.MethodSource;\n" +
+                "import org.springframework.beans.factory.annotation.Autowired;\n" +
                 "import org.springframework.boot.test.context.SpringBootTest;\n" +
-                "import org.springframework.test.context.ActiveProfiles;\n" +
                 "\n" +
                 "import java.io.IOException;\n" +
                 "import java.util.ArrayList;\n" +
@@ -201,16 +225,22 @@ public class ControllerTestGeneratorAction extends AnAction {
                 "@SpringBootTest(classes = CaEhBffTestBootApplication.class,\n" +
                 "        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)\n" +
                 "@Slf4j\n" +
-                "@ActiveProfiles(\"comparison\")\n" +
+                "@ApiComparison(serviceId = \"" + postMappingValue + "\")\n" +
                 "public class " + postMappingValue + "Test {\n" +
-                "    \n" +
+                "\n" +
+                "    @Autowired\n" +
+                "    private TestServerClient testServerClient;\n" +
+                "\n" +
                 "    @ParameterizedTest(name = \"mongoId: {0}  => {1} API TEST\")\n" +
                 "    @MethodSource(\"amcDataFromDb\")\n" +
                 "    public void apiUnitTest(String mongoId, String svcId, String requestAmcData, String expectedAmcData) throws IOException {\n" +
-                "        log.info(\"mongoId : \"  + mongoId);\n" +
-                "        Assumptions.assumeFalse(!svcId.endsWith(\"R\"), \"Command test not available\");\n" +
-                "        String modernResult = TestClient.callSvcId(svcId, requestAmcData);\n" +
+                "        log.info(\"mongoId : \" + mongoId);\n" +
+                "        System.out.println(Thread.currentThread().getName());\n" +
+                "\n" +
+                "        String modernResult = testServerClient.callSvcId(svcId, requestAmcData);\n" +
+                "\n" +
                 "        CustomAMCDataAssert.assertThat(modernResult).isEqualToWithDetail(expectedAmcData);\n" +
+                "//        CustomAMCDataAssert.assertThat(modernResult).isEqualToIgnoringDetail(expectedAmcData);\n" +
                 "        log.info(\"expectedAmcData\\n\" + expectedAmcData);\n" +
                 "        log.info(\"modernResult\\n\" + modernResult);\n" +
                 "    }\n" +
@@ -219,9 +249,11 @@ public class ControllerTestGeneratorAction extends AnAction {
                 "        List<Arguments> argumentsList = new ArrayList<>();\n" +
                 "        List<JsonNode> amcDataCalls = AmcDataHelper.loadAmcDataCollectionsForUnit(\"" + postMappingValue + "\");\n" +
                 "        Assumptions.assumeFalse(amcDataCalls.isEmpty(), \"No Test data\");\n" +
+                "\n" +
                 "        for (JsonNode amcDataCall : amcDataCalls) {\n" +
                 "            argumentsList.add(Arguments.of(amcDataCall.get(\"_id\").toString(), amcDataCall.get(\"svcId\").asText(), amcDataCall.get(\"requestAmcData\").asText(), amcDataCall.get(\"responseAmcData\").asText()));\n" +
                 "        }\n" +
+                "\n" +
                 "        return argumentsList.stream();\n" +
                 "    }\n" +
                 "}\n";
