@@ -21,7 +21,7 @@
                     anchor="first"
             />
             <action
-                    class="org.kth.plugins.ControllerTestGeneratorAction"
+                    class="org.kth.plugins.AllControllerTestGeneratorAction"
                     id="generate-test"
                     text="Generate Test Class"
                     description="Generate test classes for Controller methods"
@@ -31,7 +31,7 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <action id="generate-test" class="org.kth.plugins.ControllerTestGeneratorAction" text="Generate Test Class" description="Generate test classes for Controller methods">
+        <action id="generate-test" class="org.kth.plugins.AllControllerTestGeneratorAction" text="Generate Test Class" description="Generate test classes for Controller methods">
             <add-to-group group-id="ControllerTestGeneratorGroup" anchor="first"/>
         </action>
     </extensions>
