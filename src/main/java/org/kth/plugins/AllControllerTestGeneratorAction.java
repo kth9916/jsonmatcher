@@ -1,5 +1,6 @@
 package org.kth.plugins;
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -65,30 +66,6 @@ public class AllControllerTestGeneratorAction extends AnAction {
             event.getPresentation().setEnabledAndVisible(false);
         }
     }
-
-
-//    @Override
-//    public void actionPerformed(@NotNull AnActionEvent event) {
-//        Project project = event.getProject();
-//        if (project == null) return;
-//
-//        // 현재 열려 있는 파일의 디렉토리를 기준으로 작업
-//        VirtualFile currentFileOrDirectory = event.getData(CommonDataKeys.VIRTUAL_FILE);
-//        if (currentFileOrDirectory == null) return;
-//
-//        // 하위 디렉토리와 파일들을 순회
-//        if (currentFileOrDirectory.isDirectory()) {
-//            // 디렉토리라면 기존 로직대로 하위 디렉토리와 파일들을 순회
-//            processDirectory(project, currentFileOrDirectory);
-//        } else if (currentFileOrDirectory.getFileType().getDefaultExtension().equals("java")) {
-//            // 파일이라면 해당 파일이 Controller 클래스인지 확인하고 처리
-//            PsiFile psiFile = PsiManager.getInstance(project).findFile(currentFileOrDirectory);
-//            if (psiFile instanceof PsiJavaFile javaFile) {
-//                processJavaFile(project, javaFile);
-//            }
-//        }
-//    }
-
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         Project project = event.getProject();
@@ -125,44 +102,6 @@ public class AllControllerTestGeneratorAction extends AnAction {
             }
         });
     }
-
-//    private void processDirectory(Project project, VirtualFile directory) {
-//        for (VirtualFile file : directory.getChildren()) {
-//            if (file.isDirectory()) {
-//                // 재귀적으로 하위 디렉토리 처리
-//                processDirectory(project, file);
-//            } else if (file.getFileType().getDefaultExtension().equals("java")) {
-//                // 자바 파일인 경우 PsiJavaFile로 변환하여 처리
-//                PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-//                if (psiFile instanceof PsiJavaFile javaFile) {
-//                    processJavaFile(project, javaFile);
-//                }
-//            }
-//        }
-//    }
-//
-//    private void processJavaFile(Project project, PsiJavaFile javaFile) {
-//        PsiClass[] classes = javaFile.getClasses();
-//
-//        for (PsiClass psiClass : classes) {
-//            if (psiClass.getName() == null) continue;
-//
-//            String controllerName = psiClass.getName();
-//            if (!controllerName.endsWith("Controller")) continue;
-//
-//            // 컨트롤러 이름을 소문자로 변환하여 디렉토리 이름 생성
-//            String directoryName = controllerName.replace("Controller", "").toLowerCase();
-//
-//            // 메서드를 찾아서 `@PostMapping`만 선택
-//            List<PsiMethod> postMappingMethods = PsiTreeUtil.findChildrenOfType(psiClass, PsiMethod.class).stream()
-//                    .toList();
-//
-//            // 각 메서드에 대해 테스트 클래스 생성
-//            for (PsiMethod method : postMappingMethods) {
-//                generatorAction.createTestClassForMethod(project, directoryName, method);
-//            }
-//        }
-//    }
 
     private boolean containsControllerClass(Project project, VirtualFile directory) {
         for (VirtualFile file : directory.getChildren()) {
@@ -214,5 +153,10 @@ public class AllControllerTestGeneratorAction extends AnAction {
                 tasks.add(new TestGenerationTask(directoryName, method));
             }
         }
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
     }
 }

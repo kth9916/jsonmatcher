@@ -1,5 +1,6 @@
 package org.kth.plugins;
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -18,6 +19,11 @@ public class ControllerTestGeneratorAction extends AnAction {
     private final GeneratorAction generatorAction;
 
     //
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
+
     public ControllerTestGeneratorAction() {
         this.generatorAction = new GeneratorAction();
     }
