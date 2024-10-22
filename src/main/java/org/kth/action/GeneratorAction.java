@@ -11,6 +11,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.util.IncorrectOperationException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class GeneratorAction {
     //
     public void createTestClassForMethod(Project project, String directoryName, PsiMethod method) {
@@ -31,56 +34,59 @@ public class GeneratorAction {
         }
 
 
-        String postMappingValue = extractPostMappingValue(method);
-        String testClassName = postMappingValue + "Test";
-        PsiDirectory moduleTestDirectory = findModuleTestDirectory(project);
+        List<String> mappingValues = extractMappingValues(method);
+        for (String mappingValue : mappingValues) {
+            String testClassName = mappingValue + "Test";
+            PsiDirectory moduleTestDirectory = findModuleTestDirectory(project);
 
-        if (moduleTestDirectory == null) {
-            // 디렉토리가 없다면 로그를 찍고 종료합니다.
-            System.out.println("Test directory not found for any boot module.");
-            return;
-        }
+            if (moduleTestDirectory == null) {
+                // 디렉토리가 없다면 로그를 찍고 종료합니다.
+                System.out.println("Test directory not found for any boot module.");
+                return;
+            }
 
-        // 패키지 경로를 설정합니다.
-        String packagePath = basePackageAddress + "/comparison/" + category + "/" + directoryName.toLowerCase();
-        String packagePathWithDot = basePackageAddressWithDot + ".comparison." + category + "." + directoryName.toLowerCase();
+            // 패키지 경로를 설정합니다.
+            String packagePath = basePackageAddress + "/comparison/" + category + "/" + directoryName.toLowerCase();
+            String packagePathWithDot = basePackageAddressWithDot + ".comparison." + category + "." + directoryName.toLowerCase();
 
-        // 디렉토리를 생성합니다.
-        PsiDirectory finalTargetDirectory = ensureSubdirectoriesExist(project, packagePath, moduleTestDirectory);
+            // 디렉토리를 생성합니다.
+            PsiDirectory finalTargetDirectory = ensureSubdirectoriesExist(project, packagePath, moduleTestDirectory);
 
-        if (finalTargetDirectory == null) {
-            System.out.println("Failed to create target directory.");
-            return;
-        }
+            if (finalTargetDirectory == null) {
+                System.out.println("Failed to create target directory.");
+                return;
+            }
 
-        String fileName = testClassName + ".java";
-        PsiFile existingFile = finalTargetDirectory.findFile(fileName);
-        String newClassContent = generateTestClassContent(method, category, basePackageAddressWithDot);
+            String fileName = testClassName + ".java";
+            PsiFile existingFile = finalTargetDirectory.findFile(fileName);
+            String newClassContent = generateTestClassContent(method, category, basePackageAddressWithDot, mappingValue);
 
-        if (existingFile != null) {
-            String existingFileContent = existingFile.getText();
+            if (existingFile != null) {
+                String existingFileContent = existingFile.getText();
 
-            // 기존 파일과 새로운 내용을 비교합니다.
-            if (existingFileContent.equals(newClassContent)) {
-                System.out.println("Test class already exists and is identical: " + fileName);
-                return; // 내용이 동일하다면 생성하지 않고 종료합니다.
+                // 기존 파일과 새로운 내용을 비교합니다.
+                if (existingFileContent.equals(newClassContent)) {
+                    System.out.println("Test class already exists and is identical: " + fileName);
+                    return; // 내용이 동일하다면 생성하지 않고 종료합니다.
+                } else {
+                    // 내용이 다르면 파일을 업데이트합니다.
+                    System.out.println("Test class exists but differs, updating file: " + fileName);
+                    WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
+                        existingFile.delete(); // 기존 파일 삭제
+                        PsiFile updatedTestClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, newClassContent);
+                        finalTargetDirectory.add(updatedTestClassFile); // 새로운 파일 추가
+                        return null;
+                    });
+                }
             } else {
-                // 내용이 다르면 파일을 업데이트합니다.
-                System.out.println("Test class exists but differs, updating file: " + fileName);
+                // 기존 파일이 없으면 새 파일을 생성합니다.
+                PsiFile testClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, newClassContent);
                 WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
-                    existingFile.delete(); // 기존 파일 삭제
-                    PsiFile updatedTestClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, newClassContent);
-                    finalTargetDirectory.add(updatedTestClassFile); // 새로운 파일 추가
+                    finalTargetDirectory.add(testClassFile);
                     return null;
                 });
             }
-        } else {
-            // 기존 파일이 없으면 새 파일을 생성합니다.
-            PsiFile testClassFile = PsiFileFactory.getInstance(project).createFileFromText(fileName, JavaLanguage.INSTANCE, newClassContent);
-            WriteCommandAction.runWriteCommandAction(project, (Computable<Void>) () -> {
-                finalTargetDirectory.add(testClassFile);
-                return null;
-            });
+
         }
     }
 
@@ -130,9 +136,9 @@ public class GeneratorAction {
         return currentDirectory[0];
     }
 
-    private String generateTestClassContent(PsiMethod method, String category, String basePackageAddressWithDot) {
+    private String generateTestClassContent(PsiMethod method, String category, String basePackageAddressWithDot, String mappingValue) {
         String methodName = method.getName();
-        String postMappingValue = extractPostMappingValue(method);
+//        String mappingValue = extractMappingValue(method);
         // BootApplication 클래스를 동적으로 찾음
         String addComparisonString = basePackageAddressWithDot + ".comparison";
         String bootApplicationClass = findBootApplicationClass(method.getProject(), addComparisonString);
@@ -170,8 +176,8 @@ public class GeneratorAction {
                 "@SpringBootTest(classes = " + bootClassName + ".class,\n" +
                 "        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)\n" +
                 "@Slf4j\n" +
-                "@ApiComparison(serviceId = \"" + postMappingValue + "\")\n" +
-                "public class " + postMappingValue + "Test {\n" +
+                "@ApiComparison(serviceId = \"" + mappingValue + "\")\n" +
+                "public class " + mappingValue + "Test {\n" +
                 "\n" +
                 "    @Autowired\n" +
                 "    private TestServerClient testServerClient;\n" +
@@ -191,7 +197,7 @@ public class GeneratorAction {
                 "\n" +
                 "    public Stream<Arguments> amcDataFromDb() {\n" +
                 "        List<Arguments> argumentsList = new ArrayList<>();\n" +
-                "        List<JsonNode> amcDataCalls = AmcDataHelper.loadAmcDataCollectionsForUnit(\"" + postMappingValue + "\");\n" +
+                "        List<JsonNode> amcDataCalls = AmcDataHelper.loadAmcDataCollectionsForUnit(\"" + mappingValue + "\");\n" +
                 "        Assumptions.assumeFalse(amcDataCalls.isEmpty(), \"No Test data\");\n" +
                 "\n" +
                 "        for (JsonNode amcDataCall : amcDataCalls) {\n" +
@@ -206,15 +212,49 @@ public class GeneratorAction {
                 "}";
     }
 
-    private String extractPostMappingValue(PsiMethod method) {
-        PsiAnnotation annotation = method.getAnnotation("org.springframework.web.bind.annotation.PostMapping");
-        if (annotation != null) {
-            PsiAnnotationMemberValue value = annotation.findDeclaredAttributeValue("value");
-            if (value != null) {
-                return value.getText().replace("\"", "");
+    private List<String> extractMappingValues(PsiMethod method) {
+        List<String> mappingValues = new ArrayList<>();
+        List<String> annotations = List.of(
+                "org.springframework.web.bind.annotation.PostMapping",
+                "org.springframework.web.bind.annotation.RequestMapping");
+        for (String annotation : annotations) {
+            PsiAnnotation psiAnnotation = method.getAnnotation(annotation);
+            if (psiAnnotation != null) {
+                mappingValues.addAll(extractValuesFromAnnotation(psiAnnotation));
             }
         }
-        return "unknown";
+
+        if (mappingValues.isEmpty()) {
+            mappingValues.add("unknown");
+        }
+        return mappingValues;
+    }
+
+    private List<String> extractValuesFromAnnotation(PsiAnnotation annotation) {
+        List<String> mappingValues = new ArrayList<>();
+        if (annotation != null) {
+            PsiAnnotationMemberValue value = annotation.findDeclaredAttributeValue("value");
+            if (value instanceof PsiArrayInitializerMemberValue) {
+                // 배열 형태의 값 처리
+                PsiAnnotationMemberValue[] arrayValues = ((PsiArrayInitializerMemberValue) value).getInitializers();
+                for (PsiAnnotationMemberValue arrayValue : arrayValues) {
+                    addLiteralValueToList(arrayValue, mappingValues);
+                }
+            } else if (value instanceof PsiLiteralValue) {
+                // 단일 값 처리
+                addLiteralValueToList(value, mappingValues);
+            }
+        }
+        return mappingValues;
+    }
+
+    private void addLiteralValueToList(PsiAnnotationMemberValue memberValue, List<String> mappingValues) {
+        if (memberValue instanceof PsiLiteralValue) {
+            String literalValue = (String) ((PsiLiteralValue) memberValue).getValue();
+            if (literalValue != null) {
+                mappingValues.add(literalValue);
+            }
+        }
     }
 
     private String findBootApplicationClass(Project project, String basePackageAddressWithDot) {
