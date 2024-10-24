@@ -159,7 +159,7 @@ public class GeneratorAction {
                 "import kr.amc.amis.testlibrary.api.comparison.logging.annotation.ApiComparison;\n" +
                 "import kr.amc.amis.testlibrary.api.comparison.logging.client.TestServerClient;\n" +
                 "import lombok.extern.slf4j.Slf4j;\n" +
-                "import org.junit.jupiter.api.Assumptions;\n" +
+                "import org.junit.jupiter.api.Assertions;\n" +
                 "import org.junit.jupiter.api.TestInstance;\n" +
                 "import org.junit.jupiter.params.ParameterizedTest;\n" +
                 "import org.junit.jupiter.params.provider.Arguments;\n" +
@@ -198,7 +198,7 @@ public class GeneratorAction {
                 "    public Stream<Arguments> amcDataFromDb() {\n" +
                 "        List<Arguments> argumentsList = new ArrayList<>();\n" +
                 "        List<JsonNode> amcDataCalls = AmcDataHelper.loadAmcDataCollectionsForUnit(\"" + mappingValue + "\");\n" +
-                "        Assumptions.assumeFalse(amcDataCalls.isEmpty(), \"No Test data\");\n" +
+                "        Assertions.assertFalse(amcDataCalls.isEmpty(), \"No Test data\");\n" +
                 "\n" +
                 "        for (JsonNode amcDataCall : amcDataCalls) {\n" +
                 "            String svcId = amcDataCall.get(\"svcId\").asText();\n" +
