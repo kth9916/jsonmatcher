@@ -25,6 +25,14 @@ tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
+tasks.withType(org.jetbrains.intellij.tasks.BuildSearchableOptionsTask) {
+    jvmArgs '-Dfile.encoding=UTF-8'
+}
+
+tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask) {
+    jvmArgs '-Dfile.encoding=UTF-8'
+}
+
 patchPluginXml {
     sinceBuild = '222'
     untilBuild = '242.*'
