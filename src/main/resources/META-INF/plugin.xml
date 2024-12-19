@@ -1,15 +1,12 @@
 <idea-plugin>
     <id>org.kth.plugins.json-matcher</id>
     <name>Match Json</name>
-    <vendor>AMC</vendor>
-
+    <vendor>nextree</vendor>
     <description>
         Match Json
     </description>
-
     <depends>com.intellij.modules.java</depends>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="JsonMatcher" anchor="right" factoryClass="org.kth.plugins.JsonMatcherAction"/>
+        <toolWindow id="JsonMatcher" anchor="right" factoryClass="org.kth.plugins.JsonMatcherAction" icon="AllIcons.Actions.DiffWithClipboard"/>
     </extensions>
 </idea-plugin>
