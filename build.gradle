@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'org.kth'
-version = '1.6-SNAPSHOT'
+version = '1.0-SNAPSHOT'
 
 intellij {
     version = "2023.2.1"
@@ -15,6 +15,7 @@ intellij {
 dependencies {
     implementation 'org.jetbrains:annotations:24.0.1' // 필요에 따라 추가 의존성을 여기에 정의합니다.
     testImplementation 'junit:junit:4.13.2'
+    implementation 'com.google.code.gson:gson:2.11.0'
 }
 
 sourceCompatibility = JavaVersion.VERSION_17

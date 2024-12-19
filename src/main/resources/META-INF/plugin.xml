@@ -1,38 +1,15 @@
 <idea-plugin>
-    <id>org.kth.plugins.controller-test-generator</id>
-    <name>Controller Test Generator</name>
+    <id>org.kth.plugins.json-matcher</id>
+    <name>Match Json</name>
     <vendor>AMC</vendor>
 
     <description>
-        Generates JUnit test classes for controller methods annotated with `@PostMapping` and ending with `R`.
+        Match Json
     </description>
 
     <depends>com.intellij.modules.java</depends>
 
-    <actions>
-        <group
-                id="ControllerTestGeneratorGroup"
-                text="Controller Test Generator"
-                popup="true"
-                icon="AllIcons.Actions.Commit"
-        >
-            <add-to-group
-                    group-id="ProjectViewPopupMenu"
-                    anchor="first"
-            />
-            <action
-                    class="org.kth.plugins.AllControllerTestGeneratorAction"
-                    id="generate-test"
-                    text="Generate Test Class"
-                    description="Generate test classes for Controller methods"
-            >
-            </action>
-        </group>
-    </actions>
-
     <extensions defaultExtensionNs="com.intellij">
-        <action id="generate-test" class="org.kth.plugins.AllControllerTestGeneratorAction" text="Generate Test Class" description="Generate test classes for Controller methods">
-            <add-to-group group-id="ControllerTestGeneratorGroup" anchor="first"/>
-        </action>
+        <toolWindow id="JsonMatcher" anchor="right" factoryClass="org.kth.plugins.JsonMatcherAction"/>
     </extensions>
 </idea-plugin>
