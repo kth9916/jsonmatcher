@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.kth.entity.JsonProcessor;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -53,15 +54,9 @@ public class JsonMatcherAction implements ToolWindowFactory {
                 // JSON 문자열을 Map으로 변환
                 Map<String, Object> tempMap = gson.fromJson(reader, Map.class);
                 String beutifiedInputJson = gson.toJson(tempMap);
-//                byte[] inputUtf8Bytes = beutifiedInputJson.getBytes(StandardCharsets.UTF_8);
-//                String inputString = new String(inputUtf8Bytes, StandardCharsets.UTF_8);
-//                inputTextArea.setText(inputString); // Beautified JSON을 입력 영역에 설정
                 textChanged(inputTextArea, beutifiedInputJson);
 
                 // JSON 처리 후 결과를 출력
-//                byte[] outputUtf8Bytes = beautifiedOutputJson.getBytes(StandardCharsets.UTF_8);
-//                String outputString = new String(outputUtf8Bytes, StandardCharsets.UTF_8);
-//                outputTextArea.setText(outputString); // 여기서는 같은 JSON을 출력
                 textChanged(outputTextArea, beautifiedOutputJson);
             } catch (Exception ex) {
                 outputTextArea.setText("Error processing JSON: " + ex.getMessage());
@@ -75,24 +70,9 @@ public class JsonMatcherAction implements ToolWindowFactory {
         toolWindow.getContentManager().addContent(content);
     }
 
-
     private void textChanged(JTextArea textArea, String text) {
         textArea.setText(text);
         Character.Subset[] hangul = {Character.UnicodeBlock.HANGUL_SYLLABLES};
         textArea.getInputContext().setCharacterSubsets(hangul);
     }
-
-    private String toUTF8Values(String s) {
-        byte[] outputUtf8Bytes = s.getBytes(StandardCharsets.UTF_8);
-        return new String(outputUtf8Bytes, StandardCharsets.UTF_8);
-    }
-
-    private int asUnsigned(byte b) {
-        return ((int) b) & 0xFF;
-    }
-
-    private int asUnsigned(char c) {
-        return ((int) c) & 0xFFFF;
-    }
-
 }

@@ -9,5 +9,5 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="JsonMatcher" anchor="right" factoryClass="org.kth.plugins.JsonMatcherAction" icon="AllIcons.Actions.DiffWithClipboard"/>
     </extensions>
-    <property key="idea.encoding" value="UTF-8"/>
+<!--    <property key="idea.encoding" value="UTF-8"/>-->
 </idea-plugin>

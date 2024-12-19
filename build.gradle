@@ -35,7 +35,7 @@ tasks.withType(org.jetbrains.intellij.tasks.RunIdeTask) {
 
 patchPluginXml {
     sinceBuild = '222'
-    untilBuild = '242.*'
+    untilBuild = '243.*'
 }
 
 signPlugin {

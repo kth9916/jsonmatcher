@@ -37,7 +37,7 @@ public class JsonProcessor {
                     // 각 record 변환
                     for (JsonElement record : records) {
                         Map<String, Object> recordMap = new LinkedHashMap<>();
-                        String[] values = record.getAsJsonObject().get("value").getAsString().split("\\|");
+                        String[] values = record.getAsJsonObject().get("value").getAsString().split("\\|", -1);
 
                         // header의 키와 값의 타입에 따라 변환
                         int index = 0;
