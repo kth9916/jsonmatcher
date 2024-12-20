@@ -11,7 +11,7 @@ public class JsonProcessor {
     private final Gson gson;
 
     public JsonProcessor() {
-        this.gson = new GsonBuilder().setPrettyPrinting().create();
+        this.gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
     }
 
     public String processJson(String jsonString) {
@@ -48,10 +48,25 @@ public class JsonProcessor {
                             // 타입에 따라 변환
                             switch (type) {
                                 case "D":
-                                    recordMap.put(headerKey, Double.parseDouble(value)); // Double로 변환
+                                    if (value.isEmpty()) {
+                                        recordMap.put(headerKey, null); // 또는 0.0과 같은 기본값
+                                    } else {
+                                        recordMap.put(headerKey, Double.parseDouble(value)); // Double로 변환
+                                    }
                                     break;
                                 case "I":
-                                    recordMap.put(headerKey, Integer.parseInt(value)); // Integer로 변환
+                                    if (value.isEmpty()) {
+                                        recordMap.put(headerKey, null); // 또는 0과 같은 기본값
+                                    } else {
+                                        recordMap.put(headerKey, Integer.parseInt(value)); // Integer로 변환
+                                    }
+                                    break;
+                                case "L":
+                                    if (value.isEmpty()) {
+                                        recordMap.put(headerKey, null); // 또는 0L과 같은 기본값
+                                    } else {
+                                        recordMap.put(headerKey, Long.parseLong(value));
+                                    }
                                     break;
                                 case "S":
                                 default:
