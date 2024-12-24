@@ -47,7 +47,7 @@ public class JsonMatcherAction implements ToolWindowFactory {
             try {
                 // 입력된 JSON을 Beautify
                 String beautifiedOutputJson = processor.processJson(jsonInput);
-                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
                 JsonReader reader = new JsonReader(new StringReader(jsonInput));
                 reader.setLenient(true); // 엄격 모드 비활성화
 
