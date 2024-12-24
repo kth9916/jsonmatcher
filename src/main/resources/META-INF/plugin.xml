@@ -2,7 +2,11 @@
     <id>org.kth.plugins.json-matcher</id>
     <name>Json Matcher</name>
     <vendor>nextree</vendor>
-    <description>MatchJson</description>
+    <description>
+        <![CDATA[
+      Makes Json pretty and makes MATCHER suitable for AMIS.
+    ]]>
+    </description>
     <depends>com.intellij.modules.java</depends>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="JsonMatcher" anchor="right" factoryClass="org.kth.plugins.JsonMatcherAction" icon="AllIcons.Actions.DiffWithClipboard"/>
