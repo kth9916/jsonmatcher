@@ -10,6 +10,6 @@
     <depends>com.intellij.modules.java</depends>
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="JsonMatcher" anchor="right" factoryClass="org.kth.plugins.JsonMatcherAction" icon="AllIcons.Actions.DiffWithClipboard"/>
-        <toolWindow id="FileComparer" anchor="right" factoryClass="org.kth.plugins.CompareFilesAction" icon="AllIcons.Expui.Image.ActualZoom"/>
+        <toolWindow id="FileComparer" anchor="right" factoryClass="org.kth.plugins.CompareFilesAction" icon="AllIcons.ObjectBrowser.AbbreviatePackageNames"/>
     </extensions>
 </idea-plugin>

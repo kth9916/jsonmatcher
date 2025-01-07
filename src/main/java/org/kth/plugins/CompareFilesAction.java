@@ -1,8 +1,17 @@
 package org.kth.plugins;
 
+import com.intellij.diff.DiffManager;
+import com.intellij.diff.DiffRequestFactory;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
@@ -12,15 +21,18 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class CompareFilesAction implements ToolWindowFactory {
     //
-    private int currentErrorIndex = -1; // 현재 오류 인덱스
-    private List<Integer> errorLines; // 오류가 있는 라인 번호
-    private boolean syncScrollEnabled = true;
     private boolean beutifyAmisJson = true;
 
     @Override
@@ -42,6 +54,37 @@ public class CompareFilesAction implements ToolWindowFactory {
         JScrollPane file2ScrollPane = new JScrollPane(file2TextArea);
         rightPanel.add(file2ScrollPane, BorderLayout.CENTER);
 
+        // Key binding for Ctrl + K
+        InputMap inputMap1 = file1TextArea.getInputMap(JComponent.WHEN_FOCUSED);
+        InputMap inputMap2 = file2TextArea.getInputMap(JComponent.WHEN_FOCUSED);
+
+        ActionMap actionMap1 = file1TextArea.getActionMap();
+        ActionMap actionMap2 = file2TextArea.getActionMap();
+
+        // Ctrl + K에 대한 Action 추가
+        inputMap1.put(KeyStroke.getKeyStroke("control shift PERIOD"), "insertText");
+        inputMap2.put(KeyStroke.getKeyStroke("control shift PERIOD"), "insertText");
+
+        actionMap1.put("insertText", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String textToInsert = file1TextArea.getSelectedText(); // 첫 번째 텍스트 영역에서 선택된 텍스트 가져오기
+                if (textToInsert != null) {
+                    file2TextArea.replaceSelection(textToInsert); // 두 번째 텍스트 영역에 삽입
+                }
+            }
+        });
+
+        actionMap2.put("insertText", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String textToInsert = file2TextArea.getSelectedText(); // 두 번째 텍스트 영역에서 선택된 텍스트 가져오기
+                if (textToInsert != null) {
+                    file1TextArea.replaceSelection(textToInsert); // 첫 번째 텍스트 영역에 삽입
+                }
+            }
+        });
+
         // Main panel to hold both left and right panels
         JPanel mainPanel = new JPanel(new GridLayout(1, 2));
         mainPanel.add(leftPanel);
@@ -50,92 +93,66 @@ public class CompareFilesAction implements ToolWindowFactory {
         // Compare button
         JButton compareButton = new JButton("Compare");
         compareButton.addActionListener(e -> {
+            // ToolWindow 최소화
+            toolWindow.hide(null);
             try {
-                highlightDifferences(file1TextArea, file2TextArea, false, beutifyAmisJson);
+                highlightDifferences(project, file1TextArea, file2TextArea, false, false, beutifyAmisJson);
             } catch (BadLocationException ex) {
                 throw new RuntimeException(ex);
+            } catch (IOException et) {
+                throw new RuntimeException(et);
             }
         });
 
         // ASC Compare button
         JButton ascCompareButton = new JButton("ASC Compare");
         ascCompareButton.addActionListener(e -> {
+            // ToolWindow 최소화
+            toolWindow.hide(null);
             try {
-                highlightDifferences(file1TextArea, file2TextArea, true, beutifyAmisJson);
+                highlightDifferences(project, file1TextArea, file2TextArea, true, false, beutifyAmisJson);
             } catch (BadLocationException ex) {
                 throw new RuntimeException(ex);
+            }catch (IOException et) {
+                throw new RuntimeException(et);
             }
         });
 
-        // Move to next error button
-        JButton nextErrorButton = new JButton("Next Error");
-        nextErrorButton.addActionListener(e -> {
-            if (errorLines != null && !errorLines.isEmpty()) {
-                currentErrorIndex = (currentErrorIndex + 1) % errorLines.size();
-                int lineNumber = errorLines.get(currentErrorIndex);
-                try {
-                    file1TextArea.setCaretPosition(file1TextArea.getLineStartOffset(lineNumber));
-                } catch (BadLocationException ex) {
-                    throw new RuntimeException(ex);
-                }
-                file1TextArea.requestFocus();
-                try {
-                    file2TextArea.setCaretPosition(file2TextArea.getLineStartOffset(lineNumber));
-                } catch (BadLocationException ex) {
-                    throw new RuntimeException(ex);
-                }
-                file2TextArea.requestFocus();
-            }
-        });
-
-        // Sync Scroll button
-        JButton syncScrollButton = new JButton("Stop Sync");
-        syncScrollButton.addActionListener(e -> {
-            syncScrollEnabled = !syncScrollEnabled; // 스크롤 동기화 상태 토글
-            syncScrollButton.setText(syncScrollEnabled ? "Stop Sync" : "Sync Scroll");
-        });
-
-        // 스크롤 동기화 리스너
-        file1ScrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
-            if (syncScrollEnabled) {
-                file2ScrollPane.getVerticalScrollBar().setValue(file1ScrollPane.getVerticalScrollBar().getValue());
-            }
-        });
-
-        file2ScrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
-            if (syncScrollEnabled) {
-                file1ScrollPane.getVerticalScrollBar().setValue(file2ScrollPane.getVerticalScrollBar().getValue());
-            }
-        });
-
-        // 가로 스크롤 동기화
-        file1ScrollPane.getHorizontalScrollBar().addAdjustmentListener(e -> {
-            if (syncScrollEnabled) {
-                file2ScrollPane.getHorizontalScrollBar().setValue(file1ScrollPane.getHorizontalScrollBar().getValue());
-            }
-        });
-
-        file2ScrollPane.getHorizontalScrollBar().addAdjustmentListener(e -> {
-            if (syncScrollEnabled) {
-                file1ScrollPane.getHorizontalScrollBar().setValue(file2ScrollPane.getHorizontalScrollBar().getValue());
+        // DESC Compare button
+        JButton descCompareButton = new JButton("DESC Compare");
+        descCompareButton.addActionListener(e -> {
+            // ToolWindow 최소화
+            toolWindow.hide(null);
+            try {
+                highlightDifferences(project, file1TextArea, file2TextArea, false, true, beutifyAmisJson);
+            } catch (BadLocationException ex) {
+                throw new RuntimeException(ex);
+            }catch (IOException et) {
+                throw new RuntimeException(et);
             }
         });
 
         // Beautify AMIS JSON button
-        JButton beautifyAmisJsonButton = new JButton("Ugly");
+        JButton beautifyAmisJsonButton = new JButton("Beauty Mode ON");
         beautifyAmisJsonButton.addActionListener(e -> {
             beutifyAmisJson = !beutifyAmisJson; //
-            beautifyAmisJsonButton.setText(beutifyAmisJson ? "Ugly" : "Beautify");
+            beautifyAmisJsonButton.setText(beutifyAmisJson ? "Beauty Mode ON" : "Beauty Mode OFF");
         });
 
+        // Reset JSON button
+        JButton resetJsonButton = new JButton("Reset");
+        resetJsonButton.addActionListener(e -> {
+            file1TextArea.setText("");
+            file2TextArea.setText("");
+        });
 
         // Button panel
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(compareButton);
         buttonPanel.add(ascCompareButton);
-        buttonPanel.add(nextErrorButton);
-        buttonPanel.add(syncScrollButton);
+        buttonPanel.add(descCompareButton);
         buttonPanel.add(beautifyAmisJsonButton);
+        buttonPanel.add(resetJsonButton);
 
         // Add everything to the main panel
         panel.add(mainPanel, BorderLayout.CENTER);
@@ -148,28 +165,22 @@ public class CompareFilesAction implements ToolWindowFactory {
     }
 
     private void highlightDifferences(
+            Project project,
             JTextArea file1TextArea,
             JTextArea file2TextArea,
             boolean ascending,
+            boolean descending,
             boolean beautifyAmisJson
-    ) throws BadLocationException {
-        // 기존 하이라이팅 제거
-        file1TextArea.getHighlighter().removeAllHighlights();
-        file2TextArea.getHighlighter().removeAllHighlights();
+    ) throws BadLocationException, IOException {
+        //
+        String content1 = file1TextArea.getText();
+        String content2 = file2TextArea.getText();
 
         if (beautifyAmisJson) {
             JsonProcessor processor = new JsonProcessor();
-            String content1 = file1TextArea.getText();
-            String content2 = file2TextArea.getText();
-            String beautifulJson1 = processor.processJson(content1);
-            String beautifulJson2 = processor.processJson(content2);
-            file1TextArea.setText(beautifulJson1);
-            file2TextArea.setText(beautifulJson2);
+            content1 = processor.processJson(content1);
+            content2 = processor.processJson(content2);
         }
-
-        // 내용 가져오기
-        String content1 = file1TextArea.getText();
-        String content2 = file2TextArea.getText();
 
         List<String> lines1 = Arrays.asList(content1.split("\n"));
         List<String> lines2 = Arrays.asList(content2.split("\n"));
@@ -178,83 +189,42 @@ public class CompareFilesAction implements ToolWindowFactory {
         if (ascending) {
             lines1.sort(String::compareTo);
             lines2.sort(String::compareTo);
-            file1TextArea.setText(String.join("\n", lines1));
-            file2TextArea.setText(String.join("\n", lines2));
+            content1 = String.join("\n", lines1);
+            content2 = String.join("\n", lines2);
         }
 
-        // 차이점 강조 표시
-        errorLines = new java.util.ArrayList<>(); // 오류 라인 저장
-        int maxLength = Math.max(lines1.size(), lines2.size());
-        for (int i = 0; i < maxLength; i++) {
-            String line1 = (i < lines1.size()) ? lines1.get(i) : "";
-            String line2 = (i < lines2.size()) ? lines2.get(i) : "";
-
-            if (!line1.equals(line2)) {
-                errorLines.add(i); // 오류 라인 추가
-                highlightDifferencesInLine(file1TextArea, line1, file2TextArea, line2, i);
-            }
+        if (descending) {
+            lines1.sort(Collections.reverseOrder());
+            lines2.sort(Collections.reverseOrder());
+            content1 = String.join("\n", lines1);
+            content2 = String.join("\n", lines2);
         }
 
-        for (Integer errorLine : errorLines) {
-            // 노란색 배경으로 라인 강조
-            file1TextArea.getHighlighter().addHighlight(file1TextArea.getLineStartOffset(errorLine),
-                    file1TextArea.getLineStartOffset(errorLine + 1),
-                    new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW));
-            file2TextArea.getHighlighter().addHighlight(file2TextArea.getLineStartOffset(errorLine),
-                    file2TextArea.getLineStartOffset(errorLine + 1),
-                    new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW));
-        }
-        markScrollbar(file1TextArea, errorLines);
-        markScrollbar(file2TextArea, errorLines);
+        // 가상 파일 생성
+        VirtualFile file1 = createVirtualFile("File1.txt", content1, project);
+        VirtualFile file2 = createVirtualFile("File2.txt", content2, project);
+
+        // DiffManager를 통해 비교 요청
+        DiffManager.getInstance().showDiff(project, DiffRequestFactory.getInstance().createFromFiles(project, file1, file2));
     }
 
-    private void highlightDifferencesInLine(JTextArea file1TextArea, String line1, JTextArea file2TextArea, String line2, int lineIndex) {
-        try {
-            int start1 = file1TextArea.getLineStartOffset(lineIndex);
-            int start2 = file2TextArea.getLineStartOffset(lineIndex);
+    // 가상 파일 생성 메서드
+    private VirtualFile createVirtualFile(String name, String content, Project project) throws IOException {
+        // 임시 디렉터리 생성
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        File tempFile = new File(tempDir, name);
 
-            int minLength = Math.min(line1.length(), line2.length());
-            for (int j = 0; j < minLength; j++) {
-                if (line1.charAt(j) != line2.charAt(j)) {
-                    file1TextArea.getHighlighter().addHighlight(start1 + j, start1 + j + 1, new DefaultHighlighter.DefaultHighlightPainter(Color.BLUE));
-                    file2TextArea.getHighlighter().addHighlight(start2 + j, start2 + j + 1, new DefaultHighlighter.DefaultHighlightPainter(Color.BLUE));
-                }
-            }
+        // 파일에 내용 쓰기
+        Files.write(tempFile.toPath(), content.getBytes());
 
-            // 길이가 다른 경우 처리
-            if (line1.length() != line2.length()) {
-                if (line1.length() > line2.length()) {
-                    for (int j = minLength; j < line1.length(); j++) {
-                        file1TextArea.getHighlighter().addHighlight(start1 + j, start1 + j + 1, new DefaultHighlighter.DefaultHighlightPainter(Color.BLUE));
-                    }
-                } else {
-                    for (int j = minLength; j < line2.length(); j++) {
-                        file2TextArea.getHighlighter().addHighlight(start2 + j, start2 + j + 1, new DefaultHighlighter.DefaultHighlightPainter(Color.BLUE));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        // LocalFileSystem을 통해 VirtualFile 생성
+        VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(tempFile);
+
+        if (virtualFile != null) {
+            // PsiFile로 변환 (선택 사항)
+            PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
         }
-    }
 
-    private void markScrollbar(JTextArea textArea, List<Integer> errorLines) {
-        JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, textArea);
-        if (scrollPane != null) {
-            JPanel markerPanel = new JPanel() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    g.setColor(Color.RED);
-                    int lineHeight = textArea.getFontMetrics(textArea.getFont()).getHeight();
-                    for (Integer line : errorLines) {
-                        int yPosition = line * lineHeight;
-                        g.fillRect(getWidth() - 5, yPosition, 5, lineHeight); // Draw marker
-                    }
-                }
-            };
-            JScrollBar verticalScrollbar = scrollPane.getVerticalScrollBar();
-            verticalScrollbar.add(markerPanel);
-        }
+        return virtualFile;
     }
 }
