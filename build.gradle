@@ -8,7 +8,7 @@ version = '1.3-SNAPSHOT'
 
 intellij {
     version = "2023.2.1"
-    type = "IC"
+    type = "IU"
     plugins = ["com.intellij.java", "Git4Idea", "gradle", "org.intellij.groovy", "java"]
 }
 

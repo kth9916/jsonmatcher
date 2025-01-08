@@ -116,7 +116,7 @@ public class JsonProcessor {
         //
         String[] list;
         if (record.getAsJsonObject().get("value") != null) {
-            list = record.getAsJsonObject().get("value").getAsString().split("\\|", -1);
+            list = record.getAsJsonObject().get("value").getAsString().split("(?<!\\\\)\\|", -1);
         } else {
             List<String> values = new ArrayList<>();
             headers.keySet().forEach(key -> {

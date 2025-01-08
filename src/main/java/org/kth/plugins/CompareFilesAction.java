@@ -2,8 +2,15 @@ package org.kth.plugins;
 
 import com.intellij.diff.DiffManager;
 import com.intellij.diff.DiffRequestFactory;
+import com.intellij.diff.DiffRequestFactoryImpl;
+import com.intellij.diff.chains.DiffRequestProducer;
+import com.intellij.diff.editor.ChainDiffVirtualFile;
+import com.intellij.diff.requests.ContentDiffRequest;
+import com.intellij.diff.requests.DiffRequest;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.NlsContexts;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -12,9 +19,12 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.impl.file.impl.FileManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.util.keyFMap.KeyFMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.kth.entity.JsonProcessor;
 
 import javax.swing.*;
@@ -34,6 +44,7 @@ import java.util.List;
 public class CompareFilesAction implements ToolWindowFactory {
     //
     private boolean beutifyAmisJson = true;
+    private DiffRequest currentDiffRequest = null;
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
@@ -43,47 +54,18 @@ public class CompareFilesAction implements ToolWindowFactory {
         // Left panel for File 1
         JPanel leftPanel = new JPanel(new BorderLayout());
         JTextArea file1TextArea = new JTextArea(10, 20);
-        file1TextArea.setBorder(BorderFactory.createTitledBorder("File 1"));
+        file1TextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane file1ScrollPane = new JScrollPane(file1TextArea);
+        file1ScrollPane.setBorder(BorderFactory.createTitledBorder("File 1"));
         leftPanel.add(file1ScrollPane, BorderLayout.CENTER);
 
         // Right panel for File 2
         JPanel rightPanel = new JPanel(new BorderLayout());
         JTextArea file2TextArea = new JTextArea(10, 20);
-        file2TextArea.setBorder(BorderFactory.createTitledBorder("File 2"));
+        file2TextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane file2ScrollPane = new JScrollPane(file2TextArea);
+        file2ScrollPane.setBorder(BorderFactory.createTitledBorder("File 2"));
         rightPanel.add(file2ScrollPane, BorderLayout.CENTER);
-
-        // Key binding for Ctrl + K
-        InputMap inputMap1 = file1TextArea.getInputMap(JComponent.WHEN_FOCUSED);
-        InputMap inputMap2 = file2TextArea.getInputMap(JComponent.WHEN_FOCUSED);
-
-        ActionMap actionMap1 = file1TextArea.getActionMap();
-        ActionMap actionMap2 = file2TextArea.getActionMap();
-
-        // Ctrl + K에 대한 Action 추가
-        inputMap1.put(KeyStroke.getKeyStroke("control shift PERIOD"), "insertText");
-        inputMap2.put(KeyStroke.getKeyStroke("control shift PERIOD"), "insertText");
-
-        actionMap1.put("insertText", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String textToInsert = file1TextArea.getSelectedText(); // 첫 번째 텍스트 영역에서 선택된 텍스트 가져오기
-                if (textToInsert != null) {
-                    file2TextArea.replaceSelection(textToInsert); // 두 번째 텍스트 영역에 삽입
-                }
-            }
-        });
-
-        actionMap2.put("insertText", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String textToInsert = file2TextArea.getSelectedText(); // 두 번째 텍스트 영역에서 선택된 텍스트 가져오기
-                if (textToInsert != null) {
-                    file1TextArea.replaceSelection(textToInsert); // 첫 번째 텍스트 영역에 삽입
-                }
-            }
-        });
 
         // Main panel to hold both left and right panels
         JPanel mainPanel = new JPanel(new GridLayout(1, 2));
@@ -175,6 +157,9 @@ public class CompareFilesAction implements ToolWindowFactory {
         //
         String content1 = file1TextArea.getText();
         String content2 = file2TextArea.getText();
+        String file1Name = "File1.txt";
+        String file2Name = "File2.txt";
+        String diffFileName = "diff";
 
         if (beautifyAmisJson) {
             JsonProcessor processor = new JsonProcessor();
@@ -191,6 +176,9 @@ public class CompareFilesAction implements ToolWindowFactory {
             lines2.sort(String::compareTo);
             content1 = String.join("\n", lines1);
             content2 = String.join("\n", lines2);
+            file1Name = "AscFile1.txt";
+            file2Name = "AscFile2.txt";
+            diffFileName = "AscDiff";
         }
 
         if (descending) {
@@ -198,11 +186,33 @@ public class CompareFilesAction implements ToolWindowFactory {
             lines2.sort(Collections.reverseOrder());
             content1 = String.join("\n", lines1);
             content2 = String.join("\n", lines2);
+            file1Name = "DescFile1.txt";
+            file2Name = "DescFile2.txt";
+            diffFileName = "DescDiff";
         }
 
         // 가상 파일 생성
-        VirtualFile file1 = createVirtualFile("File1.txt", content1, project);
-        VirtualFile file2 = createVirtualFile("File2.txt", content2, project);
+        VirtualFile file1 = createVirtualFile(file1Name, content1, project);
+        VirtualFile file2 = createVirtualFile(file2Name, content2, project);
+
+        /// 이전 Diff를 닫기 위해 파일을 찾고 닫기
+        FileEditorManager editorManager = FileEditorManager.getInstance(project);
+        VirtualFile[] openFiles = editorManager.getOpenFiles();
+
+        for (VirtualFile openFile : openFiles) {
+            // Diff 파일이 열려 있는 경우 닫기
+            if(openFile instanceof ChainDiffVirtualFile) {
+                ChainDiffVirtualFile chainDiffFile = (ChainDiffVirtualFile) openFile;
+                List<? extends DiffRequestProducer> requests = chainDiffFile.getChain().getRequests();
+                String finalFile1Name = file1Name;
+                String finalFile2Name = file2Name;
+                requests.forEach(diffRequestProducer -> {
+                    if(diffRequestProducer.getName().contains(finalFile1Name + " - " + finalFile2Name)){
+                        editorManager.closeFile(openFile);
+                    }
+                });
+            }
+        }
 
         // DiffManager를 통해 비교 요청
         DiffManager.getInstance().showDiff(project, DiffRequestFactory.getInstance().createFromFiles(project, file1, file2));
