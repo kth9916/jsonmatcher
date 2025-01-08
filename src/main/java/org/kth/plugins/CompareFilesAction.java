@@ -7,6 +7,7 @@ import com.intellij.diff.chains.DiffRequestProducer;
 import com.intellij.diff.editor.ChainDiffVirtualFile;
 import com.intellij.diff.requests.ContentDiffRequest;
 import com.intellij.diff.requests.DiffRequest;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
@@ -41,10 +42,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class CompareFilesAction implements ToolWindowFactory {
+public class CompareFilesAction implements ToolWindowFactory, Disposable {
     //
     private boolean beutifyAmisJson = true;
-    private DiffRequest currentDiffRequest = null;
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
@@ -230,11 +230,15 @@ public class CompareFilesAction implements ToolWindowFactory {
         // LocalFileSystem을 통해 VirtualFile 생성
         VirtualFile virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(tempFile);
 
-        if (virtualFile != null) {
-            // PsiFile로 변환 (선택 사항)
-            PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
+        if (virtualFile == null) {
+            throw new IOException("Failed to create VirtualFile for: " + name);
         }
 
         return virtualFile;
+    }
+
+    @Override
+    public void dispose() {
+
     }
 }
