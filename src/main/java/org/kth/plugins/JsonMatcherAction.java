@@ -65,12 +65,12 @@ public class JsonMatcherAction implements ToolWindowFactory {
         // Input JSON 클립보드 복사 버튼
         JButton copyUglyJsonButton = new JButton("Copy Ugly JSON");
         copyUglyJsonButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
-        copyUglyJsonButton.addActionListener(e -> copyToClipboard(inputTextArea.getText()));
+        copyUglyJsonButton.addActionListener(e -> copyToClipboard(inputTextArea.getText(), copyUglyJsonButton));
 
         // Output JSON 클립보드 복사 버튼
         JButton copyBeautifulJsonButton = new JButton("Copy Beautiful JSON");
         copyBeautifulJsonButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
-        copyBeautifulJsonButton.addActionListener(e -> copyToClipboard(outputTextArea.getText()));
+        copyBeautifulJsonButton.addActionListener(e -> copyToClipboard(outputTextArea.getText(), copyBeautifulJsonButton));
 
         // 버튼 패널 생성
         JPanel beautifyButtonPanel = new JPanel();
@@ -87,8 +87,8 @@ public class JsonMatcherAction implements ToolWindowFactory {
 
         // 버튼 추가
         beautifyButtonPanel.add(beautifyButton);
-        copyUglyJsonButtonPanel.add(copyUglyJsonButton);
         copyBeautifulJsonButtonPanel.add(copyBeautifulJsonButton);
+        copyUglyJsonButtonPanel.add(copyUglyJsonButton);
 
         // 버튼 패널을 메인 패널에 추가
         panel.add(beautifyButtonPanel);
@@ -111,10 +111,18 @@ public class JsonMatcherAction implements ToolWindowFactory {
         textArea.getInputContext().setCharacterSubsets(hangul);
     }
 
-    private void copyToClipboard(String text) {
+    private void copyToClipboard(String text, JButton button) {
+        String originalText = button.getText();
         StringSelection selection = new StringSelection(text);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(selection, selection);
-        JOptionPane.showMessageDialog(null, "Copied to clipboard!");
+
+        // 버튼 텍스트를 "Copied"로 변경
+        button.setText("Copied!");
+
+        // 2초 후에 원래 텍스트로 되돌리기
+        Timer timer = new Timer(1000, e -> button.setText(originalText));
+        timer.setRepeats(false); // 한 번만 실행되도록 설정
+        timer.start();
     }
 }
