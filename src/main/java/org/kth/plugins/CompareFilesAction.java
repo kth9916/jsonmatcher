@@ -2,39 +2,23 @@ package org.kth.plugins;
 
 import com.intellij.diff.DiffManager;
 import com.intellij.diff.DiffRequestFactory;
-import com.intellij.diff.DiffRequestFactoryImpl;
 import com.intellij.diff.chains.DiffRequestProducer;
 import com.intellij.diff.editor.ChainDiffVirtualFile;
-import com.intellij.diff.requests.ContentDiffRequest;
-import com.intellij.diff.requests.DiffRequest;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.NlsContexts;
 import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VfsUtil;
-import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.impl.file.impl.FileManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import com.intellij.util.keyFMap.KeyFMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.kth.entity.JsonProcessor;
 
 import javax.swing.*;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Highlighter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,7 +79,7 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
                 highlightDifferences(project, file1TextArea, file2TextArea, true, false, beutifyAmisJson);
             } catch (BadLocationException ex) {
                 throw new RuntimeException(ex);
-            }catch (IOException et) {
+            } catch (IOException et) {
                 throw new RuntimeException(et);
             }
         });
@@ -109,7 +93,7 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
                 highlightDifferences(project, file1TextArea, file2TextArea, false, true, beutifyAmisJson);
             } catch (BadLocationException ex) {
                 throw new RuntimeException(ex);
-            }catch (IOException et) {
+            } catch (IOException et) {
                 throw new RuntimeException(et);
             }
         });
@@ -201,13 +185,13 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
 
         for (VirtualFile openFile : openFiles) {
             // Diff 파일이 열려 있는 경우 닫기
-            if(openFile instanceof ChainDiffVirtualFile) {
+            if (openFile instanceof ChainDiffVirtualFile) {
                 ChainDiffVirtualFile chainDiffFile = (ChainDiffVirtualFile) openFile;
                 List<? extends DiffRequestProducer> requests = chainDiffFile.getChain().getRequests();
                 String finalFile1Name = file1Name;
                 String finalFile2Name = file2Name;
                 requests.forEach(diffRequestProducer -> {
-                    if(diffRequestProducer.getName().contains(finalFile1Name + " - " + finalFile2Name)){
+                    if (diffRequestProducer.getName().contains(finalFile1Name + " - " + finalFile2Name)) {
                         editorManager.closeFile(openFile);
                     }
                 });

@@ -16,7 +16,6 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class JsonMatcherAction implements ToolWindowFactory {

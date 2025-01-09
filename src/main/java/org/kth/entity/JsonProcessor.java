@@ -46,10 +46,12 @@ public class JsonProcessor {
             Map<String, Object> recordSets = (Map<String, Object>) tempMap.get("recordSets");
             for (String key : recordSets.keySet()) {
                 Map<String, Object> recordSet = (Map<String, Object>) recordSets.get(key);
-                if (recordSet.containsKey("records")) {
+                JsonArray transformedRecords = new JsonArray();
+                if (recordSet == null){
+                    Map<String, Object> recordMap = new LinkedHashMap<>();
+                }
+                else if (recordSet.containsKey("records")) {
                     JsonArray records = gson.toJsonTree(recordSet.get("records")).getAsJsonArray();
-                    JsonArray transformedRecords = new JsonArray();
-
                     // 'headers' 가져오기
                     Map<String, String> headers = (Map<String, String>) recordSet.get("headers");
 
@@ -101,7 +103,6 @@ public class JsonProcessor {
                         }
                         transformedRecords.add(gson.toJsonTree(recordMap));
                     }
-
                     // 변환된 records 업데이트
                     recordSet.put("records", transformedRecords);
                 }
