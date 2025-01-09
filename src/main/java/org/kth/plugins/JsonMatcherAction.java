@@ -30,7 +30,6 @@ public class JsonMatcherAction implements ToolWindowFactory {
         inputTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane inputScrollPane = new JScrollPane(inputTextArea);
         inputScrollPane.setBorder(BorderFactory.createTitledBorder("Ugly JSON"));
-        panel.add(inputScrollPane);
 
         // 결과를 위한 JTextArea
         JTextArea outputTextArea = new JTextArea(10, 40);
@@ -38,10 +37,10 @@ public class JsonMatcherAction implements ToolWindowFactory {
         outputTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane outputScrollPane = new JScrollPane(outputTextArea);
         outputScrollPane.setBorder(BorderFactory.createTitledBorder("Beautiful JSON"));
-        panel.add(outputScrollPane);
 
         // 처리 버튼
         JButton beautifyButton = new JButton("Beautify JSON");
+//        beautifyButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
         beautifyButton.addActionListener(e -> {
             String jsonInput = inputTextArea.getText();
             JsonProcessor processor = new JsonProcessor();
@@ -65,24 +64,40 @@ public class JsonMatcherAction implements ToolWindowFactory {
         });
         // Input JSON 클립보드 복사 버튼
         JButton copyUglyJsonButton = new JButton("Copy Ugly JSON");
+        copyUglyJsonButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
         copyUglyJsonButton.addActionListener(e -> copyToClipboard(inputTextArea.getText()));
 
         // Output JSON 클립보드 복사 버튼
         JButton copyBeautifulJsonButton = new JButton("Copy Beautiful JSON");
+        copyBeautifulJsonButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
         copyBeautifulJsonButton.addActionListener(e -> copyToClipboard(outputTextArea.getText()));
 
         // 버튼 패널 생성
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new FlowLayout()); // FlowLayout으로 가로 배치
+        JPanel beautifyButtonPanel = new JPanel();
+        beautifyButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        beautifyButtonPanel.setLayout(new GridLayout(1, 1));
+
+        JPanel copyUglyJsonButtonPanel = new JPanel();
+        copyUglyJsonButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
+        copyUglyJsonButtonPanel.setLayout(new GridLayout(1, 1));
+
+        JPanel copyBeautifulJsonButtonPanel = new JPanel();
+        copyBeautifulJsonButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
+        copyBeautifulJsonButtonPanel.setLayout(new GridLayout(1, 1));
 
         // 버튼 추가
-        buttonPanel.add(beautifyButton);
-        buttonPanel.add(copyUglyJsonButton);
-        buttonPanel.add(copyBeautifulJsonButton);
+        beautifyButtonPanel.add(beautifyButton);
+        copyUglyJsonButtonPanel.add(copyUglyJsonButton);
+        copyBeautifulJsonButtonPanel.add(copyBeautifulJsonButton);
 
         // 버튼 패널을 메인 패널에 추가
-        panel.add(buttonPanel);
+        panel.add(beautifyButtonPanel);
+        panel.add(copyUglyJsonButtonPanel);
+        panel.add(copyBeautifulJsonButtonPanel);
 
+        // JSON 패널을 메인 패널에 추가
+        panel.add(inputScrollPane);
+        panel.add(outputScrollPane);
 
         // Tool Window에 콘텐츠 추가
         ContentFactory contentFactory = ContentFactory.getInstance();
