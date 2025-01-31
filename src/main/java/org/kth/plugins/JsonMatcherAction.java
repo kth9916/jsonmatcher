@@ -40,7 +40,7 @@ public class JsonMatcherAction implements ToolWindowFactory {
 
         // 처리 버튼
         JButton beautifyButton = new JButton("Convert JSON");
-//        beautifyButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
+        beautifyButton.setPreferredSize(new Dimension(200, 50)); // 선호 크기 설정
         beautifyButton.addActionListener(e -> {
             String jsonInput = inputTextArea.getText();
             JsonProcessor processor = new JsonProcessor();
@@ -74,21 +74,23 @@ public class JsonMatcherAction implements ToolWindowFactory {
 
         // 버튼 패널 생성
         JPanel beautifyButtonPanel = new JPanel();
-        beautifyButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        beautifyButtonPanel.setLayout(new GridLayout(1, 1));
+        beautifyButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        beautifyButtonPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 5;
 
-        JPanel copyUglyJsonButtonPanel = new JPanel();
-        copyUglyJsonButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
-        copyUglyJsonButtonPanel.setLayout(new GridLayout(1, 1));
-
-        JPanel copyBeautifulJsonButtonPanel = new JPanel();
-        copyBeautifulJsonButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
-        copyBeautifulJsonButtonPanel.setLayout(new GridLayout(1, 1));
+        JPanel copyJsonButtonPanel = new JPanel();
+        copyJsonButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 10));
+        copyJsonButtonPanel.setLayout(new GridLayout(1, 2));
 
         // 버튼 추가
-        beautifyButtonPanel.add(beautifyButton);
-        copyBeautifulJsonButtonPanel.add(copyBeautifulJsonButton);
-        copyUglyJsonButtonPanel.add(copyUglyJsonButton);
+        beautifyButtonPanel.add(beautifyButton, gbc);
+        copyJsonButtonPanel.add(copyUglyJsonButton);
+        copyJsonButtonPanel.add(copyBeautifulJsonButton);
 
         // 버튼 패널을 메인 패널에 추가
         panel.add(beautifyButtonPanel);
@@ -98,8 +100,7 @@ public class JsonMatcherAction implements ToolWindowFactory {
         panel.add(inputScrollPane);
         panel.add(outputScrollPane);
 
-        panel.add(copyUglyJsonButtonPanel);
-        panel.add(copyBeautifulJsonButtonPanel);
+        panel.add(copyJsonButtonPanel);
 
         // Tool Window에 콘텐츠 추가
         ContentFactory contentFactory = ContentFactory.getInstance();
