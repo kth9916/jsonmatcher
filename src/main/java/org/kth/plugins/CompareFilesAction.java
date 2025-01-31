@@ -99,10 +99,10 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
         });
 
         // Beautify AMIS JSON button
-        JButton beautifyAmisJsonButton = new JButton("Beauty Mode ON");
+        JButton beautifyAmisJsonButton = new JButton("Beautify Mode ON");
         beautifyAmisJsonButton.addActionListener(e -> {
             beutifyAmisJson = !beutifyAmisJson; //
-            beautifyAmisJsonButton.setText(beutifyAmisJson ? "Beauty Mode ON" : "Beauty Mode OFF");
+            beautifyAmisJsonButton.setText(beutifyAmisJson ? "Beautify Mode ON" : "Beautify Mode OFF");
         });
 
         // Reset JSON button

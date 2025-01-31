@@ -29,17 +29,17 @@ public class JsonMatcherAction implements ToolWindowFactory {
         JTextArea inputTextArea = new JTextArea(10, 40);
         inputTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane inputScrollPane = new JScrollPane(inputTextArea);
-        inputScrollPane.setBorder(BorderFactory.createTitledBorder("Ugly JSON"));
+        inputScrollPane.setBorder(BorderFactory.createTitledBorder("Original JSON"));
 
         // 결과를 위한 JTextArea
         JTextArea outputTextArea = new JTextArea(10, 40);
         outputTextArea.setEditable(false); // 결과는 읽기 전용
         outputTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane outputScrollPane = new JScrollPane(outputTextArea);
-        outputScrollPane.setBorder(BorderFactory.createTitledBorder("Beautiful JSON"));
+        outputScrollPane.setBorder(BorderFactory.createTitledBorder("Converted JSON"));
 
         // 처리 버튼
-        JButton beautifyButton = new JButton("Beautify JSON");
+        JButton beautifyButton = new JButton("Convert JSON");
 //        beautifyButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
         beautifyButton.addActionListener(e -> {
             String jsonInput = inputTextArea.getText();
@@ -59,16 +59,16 @@ public class JsonMatcherAction implements ToolWindowFactory {
                 // JSON 처리 후 결과를 출력
                 textChanged(outputTextArea, beautifiedOutputJson);
             } catch (Exception ex) {
-                outputTextArea.setText("Error beautify JSON: " + ex.getMessage());
+                outputTextArea.setText("Error convert JSON");
             }
         });
         // Input JSON 클립보드 복사 버튼
-        JButton copyUglyJsonButton = new JButton("Copy Ugly JSON");
+        JButton copyUglyJsonButton = new JButton("Copy Original JSON");
         copyUglyJsonButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
         copyUglyJsonButton.addActionListener(e -> copyToClipboard(inputTextArea.getText(), copyUglyJsonButton));
 
         // Output JSON 클립보드 복사 버튼
-        JButton copyBeautifulJsonButton = new JButton("Copy Beautiful JSON");
+        JButton copyBeautifulJsonButton = new JButton("Copy Converted JSON");
         copyBeautifulJsonButton.setPreferredSize(new Dimension(200, 30)); // 선호 크기 설정
         copyBeautifulJsonButton.addActionListener(e -> copyToClipboard(outputTextArea.getText(), copyBeautifulJsonButton));
 
@@ -92,12 +92,14 @@ public class JsonMatcherAction implements ToolWindowFactory {
 
         // 버튼 패널을 메인 패널에 추가
         panel.add(beautifyButtonPanel);
-        panel.add(copyUglyJsonButtonPanel);
-        panel.add(copyBeautifulJsonButtonPanel);
+
 
         // JSON 패널을 메인 패널에 추가
         panel.add(inputScrollPane);
         panel.add(outputScrollPane);
+
+        panel.add(copyUglyJsonButtonPanel);
+        panel.add(copyBeautifulJsonButtonPanel);
 
         // Tool Window에 콘텐츠 추가
         ContentFactory contentFactory = ContentFactory.getInstance();
@@ -120,7 +122,7 @@ public class JsonMatcherAction implements ToolWindowFactory {
         // 버튼 텍스트를 "Copied"로 변경
         button.setText("Copied!");
 
-        // 2초 후에 원래 텍스트로 되돌리기
+        // 1초 후에 원래 텍스트로 되돌리기
         Timer timer = new Timer(1000, e -> button.setText(originalText));
         timer.setRepeats(false); // 한 번만 실행되도록 설정
         timer.start();

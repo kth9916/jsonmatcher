@@ -37,16 +37,27 @@ public class JsonProcessor {
         reader.setLenient(true); // 엄격 모드 비활성화
 
         // JSON 문자열을 Map으로 변환
-//        Map<String, Object> tempMap = gson.fromJson(reader, Map.class);
-        Map<String, Object> tempMap = gson.fromJson(reader, new TypeToken<Map<String, Object>>() {
-        }.getType());
+//        Map<String, Object> tempMap = gson.fromJson(reader, new TypeToken<Map<String, Object>>() {
+//        }.getType());
+        Map<String, Object> tempMap;
+
+        // JSON 문자열을 Map으로 변환
+        try {
+            tempMap = gson.fromJson(reader, new TypeToken<Map<String, Object>>() {}.getType());
+        } catch (JsonParseException e) {
+            // JSON 형식이 아닐 경우 처리
+            System.out.println("Input is not a valid JSON. Converting to a default structure.");
+            tempMap = new LinkedHashMap<>();
+            tempMap.put("input", jsonString); // 원본 문자열을 "input" 키로 저장
+        }
 
         // 'recordSets'에서 변환 작업 수행
+        JsonArray transformedRecords = new JsonArray();
+
         if (tempMap.containsKey("recordSets")) {
             Map<String, Object> recordSets = (Map<String, Object>) tempMap.get("recordSets");
             for (String key : recordSets.keySet()) {
                 Map<String, Object> recordSet = (Map<String, Object>) recordSets.get(key);
-                JsonArray transformedRecords = new JsonArray();
                 if (recordSet == null){
                     Map<String, Object> recordMap = new LinkedHashMap<>();
                 }
