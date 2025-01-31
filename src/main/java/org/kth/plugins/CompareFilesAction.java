@@ -143,7 +143,6 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
         String content2 = file2TextArea.getText();
         String file1Name = "File1.txt";
         String file2Name = "File2.txt";
-        String diffFileName = "diff";
 
         if (beautifyAmisJson) {
             JsonProcessor processor = new JsonProcessor();
@@ -162,7 +161,6 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
             content2 = String.join("\n", lines2);
             file1Name = "AscFile1.txt";
             file2Name = "AscFile2.txt";
-            diffFileName = "AscDiff";
         }
 
         if (descending) {
@@ -172,12 +170,11 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
             content2 = String.join("\n", lines2);
             file1Name = "DescFile1.txt";
             file2Name = "DescFile2.txt";
-            diffFileName = "DescDiff";
         }
 
         // 가상 파일 생성
-        VirtualFile file1 = createVirtualFile(file1Name, content1, project);
-        VirtualFile file2 = createVirtualFile(file2Name, content2, project);
+        VirtualFile file1 = createVirtualFile(file1Name, content1);
+        VirtualFile file2 = createVirtualFile(file2Name, content2);
 
         /// 이전 Diff를 닫기 위해 파일을 찾고 닫기
         FileEditorManager editorManager = FileEditorManager.getInstance(project);
@@ -203,7 +200,7 @@ public class CompareFilesAction implements ToolWindowFactory, Disposable {
     }
 
     // 가상 파일 생성 메서드
-    private VirtualFile createVirtualFile(String name, String content, Project project) throws IOException {
+    private VirtualFile createVirtualFile(String name, String content) throws IOException {
         // 임시 디렉터리 생성
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File tempFile = new File(tempDir, name);

@@ -2,6 +2,7 @@ package org.kth.plugins;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.Strictness;
 import com.google.gson.stream.JsonReader;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
@@ -49,7 +50,7 @@ public class JsonMatcherAction implements ToolWindowFactory {
                 String beautifiedOutputJson = processor.processJson(jsonInput);
                 Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
                 JsonReader reader = new JsonReader(new StringReader(jsonInput));
-                reader.setLenient(true); // 엄격 모드 비활성화
+                reader.setStrictness(Strictness.LENIENT);// 엄격 모드 비활성화
 
                 // JSON 문자열을 Map으로 변환
                 Map<String, Object> tempMap = gson.fromJson(reader, Map.class);
