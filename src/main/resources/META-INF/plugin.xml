@@ -4,7 +4,11 @@
     <vendor>nextree</vendor>
     <description>
         <![CDATA[
-      Makes Json pretty and makes MATCHER suitable for AMIS.
+      This plugin is dedicated to AMIS development.
+
+        - It prettifies JSON by default.
+        - It enhances development convenience by converting RECORD values to match their HEADERS.
+        - It compares JSON files and highlights the differences between them.
     ]]>
     </description>
     <depends>com.intellij.modules.java</depends>
